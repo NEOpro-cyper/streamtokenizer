@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StreamVault — Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0b0f;
+      --surface: #111318;
+      --surface2: #1a1d26;
+      --border: #1f2330;
+      --accent: #5b6aff;
+      --accent2: #00d4aa;
+      --danger: #ff4757;
+      --warn: #ffa534;
+      --text: #e8eaf0;
+      --muted: #5a6070;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Syne', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      min-height: 100vh;
+    }
+
+    /* ── Auth Gate ── */
+    #auth-gate {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .auth-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    .auth-box h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: .4rem; }
+    .auth-box p { color: var(--muted); font-size: .875rem; margin-bottom: 1.8rem; }
+    .auth-box input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .9rem;
+      margin-bottom: 1rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .auth-box input:focus { border-color: var(--accent); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .7rem 1.4rem;
+      border: none;
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center; }
+    .btn-primary:hover { opacity: .88; }
+    .btn-danger { background: rgba(255,71,87,.15); color: var(--danger); border: 1px solid rgba(255,71,87,.3); }
+    .btn-danger:hover { background: rgba(255,71,87,.25); }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+    .err-msg { color: var(--danger); font-size: .8rem; margin-top: .5rem; display: none; }
+
+    /* ── App Shell ── */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .logo { font-size: 1.1rem; font-weight: 800; letter-spacing: -.02em; }
+    .logo span { color: var(--accent); }
+    .header-actions { display: flex; gap: .75rem; align-items: center; }
+
+    main { padding: 2rem; max-width: 1200px; margin: 0 auto; width: 100%; }
+
+    /* ── Stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+    }
+    .stat-label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .5rem; }
+    .stat-value { font-size: 2rem; font-weight: 800; font-family: var(--mono); }
+    .stat-value.green { color: var(--accent2); }
+    .stat-value.blue  { color: var(--accent); }
+    .stat-value.red   { color: var(--danger); }
+    .stat-value.warn  { color: var(--warn); }
+
+    /* ── Create URL section ── */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .create-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .form-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .form-group { display: flex; flex-direction: column; gap: .4rem; flex: 1; min-width: 200px; }
+    .form-group label { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .form-group input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .65rem 1rem;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .85rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-group input:focus { border-color: var(--accent); }
+    .create-result {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: rgba(91,106,255,.08);
+      border: 1px solid rgba(91,106,255,.25);
+      border-radius: 8px;
+      display: none;
+    }
+    .result-label { font-size: .7rem; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .4rem; }
+    .result-url {
+      font-family: var(--mono);
+      font-size: .85rem;
+      word-break: break-all;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: .2rem .5rem;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: .7rem;
+      font-family: var(--sans);
+      white-space: nowrap;
+      transition: all .2s;
+    }
+    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
+    .copy-btn.copied { color: var(--accent2); border-color: var(--accent2); }
+
+    /* ── Tokens Table ── */
+    .table-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+      gap: .75rem;
+    }
+    .search-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .6rem 1rem;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: .85rem;
+      outline: none;
+      width: 280px;
+      transition: border-color .2s;
+    }
+    .search-box:focus { border-color: var(--accent); }
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      padding: .9rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      font-weight: 600;
+    }
+    td {
+      padding: .85rem 1.2rem;
+      border-bottom: 1px solid var(--border);
+      font-size: .875rem;
+      vertical-align: middle;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    .token-cell { font-family: var(--mono); font-size: .8rem; color: var(--accent); }
+    .label-cell { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      font-size: .7rem;
+      font-weight: 600;
+    }
+    .badge-active  { background: rgba(0,212,170,.12); color: var(--accent2); }
+    .badge-revoked { background: rgba(255,71,87,.12);  color: var(--danger); }
+    .badge-expired { background: rgba(255,165,52,.12); color: var(--warn); }
+    .hits-cell { font-family: var(--mono); font-size: .8rem; }
+    .date-cell  { font-family: var(--mono); font-size: .75rem; color: var(--muted); }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.2rem;
+      border-top: 1px solid var(--border);
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    .pag-btns { display: flex; gap: .5rem; }
+
+    .loading { text-align: center; padding: 2rem; color: var(--muted); font-size: .875rem; }
+    .empty { text-align: center; padding: 3rem; color: var(--muted); }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: .75rem 1.25rem;
+      border-radius: 10px;
+      font-size: .875rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .3s;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { background: rgba(0,212,170,.15); color: var(--accent2); border: 1px solid rgba(0,212,170,.3); }
+    #toast.error   { background: rgba(255,71,87,.15);  color: var(--danger);  border: 1px solid rgba(255,71,87,.3); }
+  </style>
+</head>
+<body>
+
+<!-- ── Auth Gate ── -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <h1>Stream<span>Vault</span></h1>
+    <p>Enter your admin password to continue</p>
+    <input type="password" id="pw-input" placeholder="Admin password" autocomplete="current-password" />
+    <div class="err-msg" id="pw-err">Incorrect password. Try again.</div>
+    <button class="btn btn-primary" onclick="login()">Unlock Dashboard</button>
+  </div>
+</div>
+
+<!-- ── App ── -->
+<div id="app">
+  <header>
+    <div class="logo">Stream<span>Vault</span></div>
+    <div class="header-actions">
+      <button class="btn btn-ghost" onclick="cleanup()">🧹 Clean Expired</button>
+      <button class="btn btn-ghost" onclick="loadStats(); loadTokens()">↺ Refresh</button>
+      <button class="btn btn-ghost" onclick="logout()">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Active Tokens</div>
+        <div class="stat-value green" id="s-active">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Hits</div>
+        <div class="stat-value blue" id="s-hits">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Revoked</div>
+        <div class="stat-value red" id="s-revoked">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Expired</div>
+        <div class="stat-value warn" id="s-expired">—</div>
+      </div>
+    </div>
+
+    <!-- Create Token -->
+    <div class="section-title">Create Masked URL</div>
+    <div class="create-card">
+      <div class="form-row">
+        <div class="form-group" style="flex:3">
+          <label>Original URL</label>
+          <input type="text" id="in-url" placeholder="https://example.com/stream.m3u8?token=abc123..." />
+        </div>
+        <div class="form-group" style="flex:1.5">
+          <label>Label (optional)</label>
+          <input type="text" id="in-label" placeholder="e.g. Movie 4K Stream" />
+        </div>
+        <div class="form-group" style="flex:0.8; min-width:130px">
+          <label>Expires in (hours)</label>
+          <input type="number" id="in-hours" placeholder="24" value="24" min="0" />
+        </div>
+        <div class="form-group" style="flex:0; min-width:auto; justify-content:flex-end; padding-top:1.5rem">
+          <button class="btn btn-primary" onclick="createToken()" style="white-space:nowrap">+ Mask URL</button>
+        </div>
+      </div>
+      <div class="create-result" id="create-result">
+        <div class="result-label">Masked URL</div>
+        <div class="result-url">
+          <span id="result-url-text"></span>
+          <button class="copy-btn" id="copy-btn" onclick="copyResult()">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tokens Table -->
+    <div class="table-header">
+      <div class="section-title" style="margin:0">All Tokens</div>
+      <input class="search-box" id="search-box" placeholder="Search by label or token…" oninput="debounceSearch()" />
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Label</th>
+            <th>Status</th>
+            <th>Hits</th>
+            <th>Created</th>
+            <th>Expires</th>
+            <th>Last Used</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="token-tbody">
+          <tr><td colspan="8" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span id="pag-info">—</span>
+        <div class="pag-btns">
+          <button class="btn btn-ghost" id="btn-prev" onclick="prevPage()" disabled>← Prev</button>
+          <button class="btn btn-ghost" id="btn-next" onclick="nextPage()">Next →</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  const LIMIT = 20;
+  let password = "";
+  let page = 0;
+  let searchQuery = "";
+  let searchTimer;
+
+  /* ── Auth ── */
+  function login() {
+    const pw = document.getElementById("pw-input").value.trim();
+    if (!pw) return;
+    password = pw;
+    // Test password with a stats call
+    fetch("/api/admin?action=stats", { headers: { "x-admin-password": pw } })
+      .then(r => {
+        if (r.status === 401) throw new Error("bad");
+        return r.json();
+      })
+      .then(d => {
+        if (!d.success) throw new Error("bad");
+        document.getElementById("auth-gate").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+        document.getElementById("app").style.flexDirection = "column";
+        applyStats(d.stats);
+        loadTokens();
+      })
+      .catch(() => {
+        document.getElementById("pw-err").style.display = "block";
+        password = "";
+      });
+  }
+  document.getElementById("pw-input").addEventListener("keydown", e => { if (e.key === "Enter") login(); });
+
+  function logout() {
+    password = "";
+    document.getElementById("app").style.display = "none";
+    document.getElementById("auth-gate").style.display = "flex";
+    document.getElementById("pw-input").value = "";
+  }
+
+  /* ── Stats ── */
+  function loadStats() {
+    fetch("/api/admin?action=stats", { headers: { "x-admin-password": password } })
+      .then(r => r.json())
+      .then(d => { if (d.success) applyStats(d.stats); });
+  }
+  function applyStats(s) {
+    document.getElementById("s-active").textContent  = s.active_tokens;
+    document.getElementById("s-hits").textContent    = Number(s.total_hits).toLocaleString();
+    document.getElementById("s-revoked").textContent = s.revoked_tokens;
+    document.getElementById("s-expired").textContent = s.expired_tokens;
+  }
+
+  /* ── Tokens ── */
+  function loadTokens() {
+    const offset = page * LIMIT;
+    const search = encodeURIComponent(searchQuery);
+    document.getElementById("token-tbody").innerHTML = `<tr><td colspan="8" class="loading">Loading…</td></tr>`;
+    fetch(`/api/admin?action=list&limit=${LIMIT}&offset=${offset}&search=${search}`, {
+      headers: { "x-admin-password": password }
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.success) { toast("Failed to load tokens", "error"); return; }
+        renderTable(d.rows, d.total, offset);
+      });
+  }
+
+  function renderTable(rows, total, offset) {
+    const tbody = document.getElementById("token-tbody");
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">No tokens found.</td></tr>`;
+    } else {
+      tbody.innerHTML = rows.map(r => {
+        const now = new Date();
+        const expired = r.expires_at && new Date(r.expires_at) < now;
+        const status = !r.is_active ? "revoked" : expired ? "expired" : "active";
+        const badgeClass = { active: "badge-active", revoked: "badge-revoked", expired: "badge-expired" }[status];
+        return `<tr>
+          <td class="token-cell">${r.token.slice(0,12)}…</td>
+          <td class="label-cell">${esc(r.label || "—")}</td>
+          <td><span class="badge ${badgeClass}">${status}</span></td>
+          <td class="hits-cell">${r.hit_count}</td>
+          <td class="date-cell">${fmtDate(r.created_at)}</td>
+          <td class="date-cell">${r.expires_at ? fmtDate(r.expires_at) : "Never"}</td>
+          <td class="date-cell">${r.last_used ? fmtDate(r.last_used) : "Never"}</td>
+          <td>
+            ${r.is_active ? `<button class="btn btn-danger" onclick="revoke(${r.id})">Revoke</button>` : "—"}
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    const from = offset + 1, to = Math.min(offset + rows.length, total);
+    document.getElementById("pag-info").textContent = total > 0 ? `${from}–${to} of ${total}` : "0 tokens";
+    document.getElementById("btn-prev").disabled = page === 0;
+    document.getElementById("btn-next").disabled = offset + rows.length >= total;
+  }
+
+  function prevPage() { if (page > 0) { page--; loadTokens(); } }
+  function nextPage() { page++; loadTokens(); }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      searchQuery = document.getElementById("search-box").value.trim();
+      page = 0;
+      loadTokens();
+    }, 400);
+  }
+
+  /* ── Create ── */
+  async function createToken() {
+    const url    = document.getElementById("in-url").value.trim();
+    const label  = document.getElementById("in-label").value.trim();
+    const hours  = document.getElementById("in-hours").value;
+
+    if (!url) { toast("Please enter a URL", "error"); return; }
+
+    const apiKey = prompt("Enter your ADMIN_API_KEY to create a token:");
+    if (!apiKey) return;
+
+    const res = await fetch("/api/shorten", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+      body: JSON.stringify({ url, label: label || undefined, expiresInHours: parseFloat(hours) || 24 })
+    });
+    const d = await res.json();
+    if (!d.success) { toast(d.error || "Failed to create token", "error"); return; }
+
+    document.getElementById("result-url-text").textContent = d.maskedUrl;
+    document.getElementById("create-result").style.display = "block";
+    document.getElementById("in-url").value = "";
+    document.getElementById("in-label").value = "";
+    toast("Masked URL created!", "success");
+    loadStats();
+    loadTokens();
+  }
+
+  function copyResult() {
+    const text = document.getElementById("result-url-text").textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById("copy-btn");
+      btn.textContent = "Copied!";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 2000);
+    });
+  }
+
+  /* ── Revoke ── */
+  function revoke(id) {
+    if (!confirm("Revoke this token? It will stop working immediately.")) return;
+    fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ action: "revoke", id })
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) { toast("Token revoked", "success"); loadStats(); loadTokens(); }
+        else toast(d.error || "Failed", "error");
+      });
+  }
+
+  /* ── Cleanup ── */
+  function cleanup() {
+    fetch("/api/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ action: "cleanup" })
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) { toast(`Deleted ${d.deleted} expired tokens`, "success"); loadStats(); loadTokens(); }
+        else toast(d.error || "Failed", "error");
+      });
+  }
+
+  /* ── Utils ── */
+  function fmtDate(s) {
+    if (!s) return "—";
+    const d = new Date(s);
+    return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  function esc(s) {
+    return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  let toastTimer;
+  function toast(msg, type = "success") {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ""; }, 3000);
+  }
+</script>
+</body>
+</html>

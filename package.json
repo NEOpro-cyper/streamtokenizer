@@ -1,0 +1,11 @@
+{
+  "name": "stream-vault",
+  "version": "1.0.0",
+  "description": "Secure URL proxy & masking service — any URL type",
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "pg": "^8.11.3"
+  }
+}
